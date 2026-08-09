@@ -4,7 +4,7 @@ Backend utility API for the nextmail app.
 
 ## Features
 
-- `GET /api/v1/geo` - resolve a requester's IP to an ISO 3166-1 alpha-2 country code.
+- `GET /api/v1/geo` - resolve a requester's IP to a country code, returning the IP and its type (ipv4/ipv6).
 - `GET /health` - service health probe (also available at `GET /api/v1/health`).
 
 ## Project layout
@@ -103,15 +103,19 @@ go run ./cmd/server
 ```bash
 # Country for the requester's own IP
 curl http://localhost:8080/api/v1/geo
-# -> {"country_code":"US"}
+# -> {"ip":"203.0.113.5","type":"ipv4","country_code":"US"}
 
 # Look up an arbitrary IP (for testing)
 curl 'http://localhost:8080/api/v1/geo?ip=8.8.8.8'
-# -> {"country_code":"US"}
+# -> {"ip":"8.8.8.8","type":"ipv4","country_code":"US"}
+
+# IPv6 addresses are reported as type "ipv6"
+curl 'http://localhost:8080/api/v1/geo?ip=2001:4860:4860::8888'
+# -> {"ip":"2001:4860:4860::8888","type":"ipv6","country_code":"US"}
 
 # Private / unknown ranges return an empty code
 curl 'http://localhost:8080/api/v1/geo?ip=192.168.1.1'
-# -> {"country_code":""}
+# -> {"ip":"192.168.1.1","type":"ipv4","country_code":""}
 
 # A malformed IP is rejected
 curl 'http://localhost:8080/api/v1/geo?ip=not-an-ip'

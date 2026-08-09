@@ -34,7 +34,31 @@ func (h *handler) handleGeo(w http.ResponseWriter, r *http.Request) {
 		web.Error(w, http.StatusBadRequest, "invalid ip")
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, map[string]string{"country_code": code})
+	web.WriteJSON(w, http.StatusOK, geoResponse{
+		IP:          ipStr,
+		Type:        ipType(ipStr),
+		CountryCode: code,
+	})
+}
+
+// geoResponse is the JSON body returned by GET /geo.
+type geoResponse struct {
+	IP          string `json:"ip"`
+	Type        string `json:"type"`
+	CountryCode string `json:"country_code"`
+}
+
+// ipType reports whether ip is an IPv4 or IPv6 address. It returns "" for a
+// value that is not a valid IP literal.
+func ipType(ip string) string {
+	parsed := net.ParseIP(ip)
+	if parsed == nil {
+		return ""
+	}
+	if parsed.To4() != nil {
+		return "ipv4"
+	}
+	return "ipv6"
 }
 
 // clientIP determines the requester's IP address. It honors an optional ?ip=

@@ -47,6 +47,8 @@ func TestHandleGeo_success(t *testing.T) {
 		t.Fatalf("lookup got %q, want 8.8.8.8", f.last)
 	}
 	var body struct {
+		IP          string `json:"ip"`
+		Type        string `json:"type"`
 		CountryCode string `json:"country_code"`
 	}
 	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
@@ -55,8 +57,39 @@ func TestHandleGeo_success(t *testing.T) {
 	if body.CountryCode != "US" {
 		t.Fatalf("country_code = %q, want US", body.CountryCode)
 	}
+	if body.IP != "8.8.8.8" {
+		t.Fatalf("ip = %q, want 8.8.8.8", body.IP)
+	}
+	if body.Type != "ipv4" {
+		t.Fatalf("type = %q, want ipv4", body.Type)
+	}
 	if ct := rec.Header().Get("Content-Type"); ct != "application/json" {
 		t.Fatalf("content-type = %q, want application/json", ct)
+	}
+}
+
+func TestHandleGeo_ipv6(t *testing.T) {
+	h, f := newHandler("US", nil)
+	rec := doRequest(h, "/geo?ip=2001:4860:4860::8888")
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+	if f.last != "2001:4860:4860::8888" {
+		t.Fatalf("lookup got %q, want 2001:4860:4860::8888", f.last)
+	}
+	var body struct {
+		IP   string `json:"ip"`
+		Type string `json:"type"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode body: %v", err)
+	}
+	if body.IP != "2001:4860:4860::8888" {
+		t.Fatalf("ip = %q, want 2001:4860:4860::8888", body.IP)
+	}
+	if body.Type != "ipv6" {
+		t.Fatalf("type = %q, want ipv6", body.Type)
 	}
 }
 
@@ -69,11 +102,19 @@ func TestHandleGeo_notFound(t *testing.T) {
 		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
 	}
 	var body struct {
+		IP          string `json:"ip"`
+		Type        string `json:"type"`
 		CountryCode string `json:"country_code"`
 	}
 	_ = json.Unmarshal(rec.Body.Bytes(), &body)
 	if body.CountryCode != "" {
 		t.Fatalf("country_code = %q, want empty", body.CountryCode)
+	}
+	if body.IP != "192.168.1.1" {
+		t.Fatalf("ip = %q, want 192.168.1.1", body.IP)
+	}
+	if body.Type != "ipv4" {
+		t.Fatalf("type = %q, want ipv4", body.Type)
 	}
 }
 

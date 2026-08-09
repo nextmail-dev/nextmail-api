@@ -27,11 +27,19 @@ func TestRouter_v1Geo_success(t *testing.T) {
 		t.Fatalf("status = %d, want 200", rec.Code)
 	}
 	var body struct {
+		IP          string `json:"ip"`
+		Type        string `json:"type"`
 		CountryCode string `json:"country_code"`
 	}
 	_ = json.Unmarshal(rec.Body.Bytes(), &body)
 	if body.CountryCode != "US" {
 		t.Fatalf("country_code = %q, want US", body.CountryCode)
+	}
+	if body.IP != "8.8.8.8" {
+		t.Fatalf("ip = %q, want 8.8.8.8", body.IP)
+	}
+	if body.Type != "ipv4" {
+		t.Fatalf("type = %q, want ipv4", body.Type)
 	}
 }
 

@@ -1,0 +1,17 @@
+# Binaries
+*.exe
+/nextmail-api
+
+# Build output
+/dist/
+
+# GeoIP database (not redistributable)
+/data/
+*.mmdb
+
+# Editor / IDE
+.vscode/
+.idea/
+
+# Claude Code local state
+.claude/

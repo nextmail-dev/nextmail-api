@@ -1,0 +1,92 @@
+# systemd unit for nextmail-api.
+#
+# Install (as root):
+#   1. Build and install the binary:
+#        go build -o /usr/local/bin/nextmail-api ./cmd/server
+#      (or unpack a release archive produced by scripts/build.sh)
+#   2. Create a dedicated service account:
+#        useradd --system --no-create-home --shell /usr/sbin/nologin nextmail-api
+#   3. Create the data directory and install the GeoIP database:
+#        mkdir -p /var/lib/nextmail-api/data
+#        # put GeoLite2-Country.mmdb in /var/lib/nextmail-api/data/
+#        # (see scripts/download-geoip.sh), then:
+#        chown -R nextmail-api:nextmail-api /var/lib/nextmail-api
+#   4. Install and start the service:
+#        install -m 0644 scripts/nextmail-api.service /etc/systemd/system/
+#        systemctl daemon-reload
+#        systemctl enable --now nextmail-api
+#
+# Logs:   journalctl -u nextmail-api -f
+# Status: systemctl status nextmail-api
+
+[Unit]
+Description=nextmail-api HTTP backend service
+After=network.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=nextmail-api
+Group=nextmail-api
+WorkingDirectory=/var/lib/nextmail-api
+
+# Runtime configuration (see README for the full env-var table).
+Environment=PORT=8080
+Environment=APP_ENV=prod
+Environment=GEOIP_DB_PATH=/var/lib/nextmail-api/data/GeoLite2-Country.mmdb
+
+ExecStart=/usr/local/bin/nextmail-api
+
+# Graceful shutdown: the binary traps SIGTERM and drains in-flight requests
+# (10s internal deadline). Give systemd headroom before force-killing.
+KillSignal=SIGTERM
+TimeoutStopSec=15s
+
+# Restart on crash, but back off so a failing start doesn't loop tightly.
+Restart=on-failure
+RestartSec=5s
+
+# --- Hardening -------------------------------------------------------------
+# Unprivileged user; no privilege escalation, no SUID/SGID bits.
+NoNewPrivileges=true
+RestrictSUIDSGID=true
+UMask=0077
+
+# Read-only filesystem except the data directory.
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/nextmail-api
+
+# No device, kernel, clock, hostname, or cgroup access.
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+
+# Network only; no other address families, no namespaces.
+RestrictAddressFamilies=AF_INET AF_INET6
+RestrictNamespaces=true
+
+# Pin personality; no realtime scheduling.
+LockPersonality=true
+RestrictRealtime=true
+
+# Resource limits.
+LimitNOFILE=1048576
+
+# To bind a privileged port (<1024), e.g. PORT=80: set the port above, grant
+# the capability, and remove the comment markers on the next two lines.
+#   AmbientCapabilities=CAP_NET_BIND_SERVICE
+#   CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+
+# Logs go to journald (stdout/stderr are captured by default).
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

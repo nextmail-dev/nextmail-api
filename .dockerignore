@@ -1,0 +1,19 @@
+# Build output
+/dist/
+
+# GeoIP database (not redistributable)
+/data/
+*.mmdb
+
+# VCS / IDE
+.git/
+.gitignore
+.vscode/
+.idea/
+.claude/
+
+# Misc
+README.md
+scripts/
+Dockerfile
+.dockerignore

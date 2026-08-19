@@ -11,7 +11,7 @@ Backend utility API for the nextmail app.
 
 Prebuilt images are published to
 [`ghcr.io/nextmail-dev/nextmail-api`](https://github.com/nextmail-dev/nextmail-api/pkgs/container/nextmail-api)
-on every push to `main` and on `v*` tags.
+on every `v*` tag (e.g. `v1.0.0` -> `1.0.0`, `1.0`, and `latest`).
 
 The image does **not** bundle the GeoIP database (GeoLite2 is not
 redistributable). Download it first, then mount it into the container:
@@ -33,7 +33,7 @@ The repo ships a [`docker-compose.yml`](docker-compose.yml):
 ```yaml
 services:
   nextmail-api:
-    image: ghcr.io/nextmail-dev/nextmail-api:main
+    image: ghcr.io/nextmail-dev/nextmail-api:1.0.0
     ports:
       - "8080:8080"
     volumes:
@@ -54,7 +54,7 @@ docker compose logs -f
 docker compose down
 ```
 
-To pin a release, use a version tag (e.g. `ghcr.io/nextmail-dev/nextmail-api:v1.0.0`).
+To upgrade, bump the version tag in `docker-compose.yml` (e.g. `1.0.1`).
 
 ### Build the image locally
 

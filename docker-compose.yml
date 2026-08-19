@@ -1,0 +1,12 @@
+services:
+  nextmail-api:
+    image: ghcr.io/nextmail-dev/nextmail-api:main
+    ports:
+      - "8080:8080"
+    volumes:
+      # GeoLite2 database is not bundled in the image; mount it read-only.
+      # Download it first: bash scripts/download-geoip.sh
+      - ./data:/data:ro
+    environment:
+      - APP_ENV=prod
+    restart: unless-stopped

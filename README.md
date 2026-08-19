@@ -7,6 +7,61 @@ Backend utility API for the nextmail app.
 - `GET /api/v1/geo` - resolve a requester's IP to a country code, returning the IP and its type (ipv4/ipv6).
 - `GET /health` - service health probe (also available at `GET /api/v1/health`).
 
+## Quick start with Docker
+
+Prebuilt images are published to
+[`ghcr.io/nextmail-dev/nextmail-api`](https://github.com/nextmail-dev/nextmail-api/pkgs/container/nextmail-api)
+on every push to `main` and on `v*` tags.
+
+The image does **not** bundle the GeoIP database (GeoLite2 is not
+redistributable). Download it first, then mount it into the container:
+
+```bash
+# one-time: fetch the GeoIP database into ./data
+bash scripts/download-geoip.sh
+
+docker run -d --name nextmail-api \
+  -p 8080:8080 \
+  -v ./data:/data:ro \
+  ghcr.io/nextmail-dev/nextmail-api:main
+```
+
+### Docker Compose
+
+The repo ships a [`docker-compose.yml`](docker-compose.yml):
+
+```yaml
+services:
+  nextmail-api:
+    image: ghcr.io/nextmail-dev/nextmail-api:main
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/data:ro
+    environment:
+      - APP_ENV=prod
+    restart: unless-stopped
+```
+
+Start it:
+
+```bash
+# make sure data/GeoLite2-Country.mmdb exists (see "Get the GeoIP database")
+docker compose up -d
+
+# follow logs / stop
+docker compose logs -f
+docker compose down
+```
+
+To pin a release, use a version tag (e.g. `ghcr.io/nextmail-dev/nextmail-api:v1.0.0`).
+
+### Build the image locally
+
+```bash
+docker build -t nextmail-api .
+```
+
 ## Project layout
 
 The project follows a layered, versioned layout designed so that adding a new
@@ -61,7 +116,7 @@ mux.Handle("/api/v1/", http.StripPrefix("/api/v1", v1Mux))
 
 A future v2 mounts the same way without touching v1.
 
-## Prerequisites
+## Prerequisites (local development)
 
 - Go 1.22+
 - A MaxMind GeoLite2-Country database (`.mmdb`). GeoLite2 is free but requires
@@ -86,13 +141,13 @@ A future v2 mounts the same way without touching v1.
 
 ## Configuration
 
-| Env var         | Default                        | Description                       |
-| --------------- | ------------------------------ | --------------------------------- |
-| `PORT`          | `8080`                         | HTTP port to listen on            |
-| `APP_ENV`       | `dev`                          | Deployment environment            |
-| `GEOIP_DB_PATH` | `./data/GeoLite2-Country.mmdb` | Path to the GeoLite2-Country file |
+| Env var         | Default (binary)               | Default (Docker image)          | Description                       |
+| --------------- | ------------------------------ | ------------------------------- | --------------------------------- |
+| `PORT`          | `8080`                         | `8080`                          | HTTP port to listen on            |
+| `APP_ENV`       | `dev`                          | `dev`                           | Deployment environment            |
+| `GEOIP_DB_PATH` | `./data/GeoLite2-Country.mmdb` | `/data/GeoLite2-Country.mmdb`   | Path to the GeoLite2-Country file |
 
-## Run
+## Run (local development)
 
 ```bash
 go run ./cmd/server
